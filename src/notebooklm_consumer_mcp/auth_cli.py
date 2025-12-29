@@ -257,11 +257,36 @@ def extract_session_id_from_html(html: str) -> str:
     return ""
 
 
+def is_chrome_profile_locked() -> bool:
+    """Check if Chrome's default profile is locked (Chrome is using it).
+
+    This is more reliable than process detection because:
+    - Works across all platforms
+    - Detects if Chrome is using the specific profile we need
+    - The lock file only exists while Chrome has the profile open
+    """
+    user_data_dir = get_chrome_user_data_dir()
+    if not user_data_dir:
+        return False
+
+    # Chrome creates a "SingletonLock" file when the profile is in use
+    lock_file = Path(user_data_dir) / "SingletonLock"
+    return lock_file.exists()
+
+
 def is_chrome_running() -> bool:
-    """Check if Chrome is already running (without debugging)."""
+    """Check if Chrome is already running (without debugging).
+
+    Uses multiple detection methods for reliability.
+    """
     import subprocess
     import platform
 
+    # First, check if the profile is locked (most reliable)
+    if is_chrome_profile_locked():
+        return True
+
+    # Fallback to process detection
     system = platform.system()
     try:
         if system == "Darwin":
@@ -271,11 +296,15 @@ def is_chrome_running() -> bool:
             )
             return result.returncode == 0
         elif system == "Linux":
-            result = subprocess.run(
-                ["pgrep", "-f", "chrome"],
-                capture_output=True, text=True
-            )
-            return result.returncode == 0
+            # Try multiple patterns for Linux
+            for pattern in ["google-chrome", "chromium", "chrome"]:
+                result = subprocess.run(
+                    ["pgrep", "-f", pattern],
+                    capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    return True
+            return False
         elif system == "Windows":
             result = subprocess.run(
                 ["tasklist", "/FI", "IMAGENAME eq chrome.exe"],
@@ -306,10 +335,15 @@ def run_auth_flow(port: int = CDP_DEFAULT_PORT, auto_launch: bool = True) -> Aut
         if is_chrome_running():
             print("Chrome is running but without remote debugging enabled.")
             print()
-            print("Please either:")
-            print("1. Close Chrome completely, then run this command again, OR")
-            print("2. Restart Chrome with debugging:")
-            print(f'   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port={port}')
+            print("Options:")
+            print()
+            print("  1. Use file mode (RECOMMENDED):")
+            print("     notebooklm-consumer-auth --file")
+            print()
+            print("  2. Close Chrome completely, then run this command again")
+            print()
+            print("  3. Restart Chrome with debugging:")
+            print(f'     /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port={port}')
             print()
             return None
 
@@ -322,7 +356,10 @@ def run_auth_flow(port: int = CDP_DEFAULT_PORT, auto_launch: bool = True) -> Aut
     if not debugger_url:
         print(f"ERROR: Cannot connect to Chrome on port {port}")
         print()
-        print("Please start Chrome with remote debugging enabled:")
+        print("TIP: The easiest option is file mode:")
+        print("     notebooklm-consumer-auth --file")
+        print()
+        print("Or start Chrome with remote debugging enabled:")
         print()
         print("  macOS:")
         print(f'    /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port={port}')
@@ -440,63 +477,78 @@ def run_auth_flow(port: int = CDP_DEFAULT_PORT, auto_launch: bool = True) -> Aut
     return tokens
 
 
-def run_manual_cookie_entry(cookie_file: str | None = None) -> AuthTokens | None:
-    """Prompt user to paste cookies manually and save them.
+def run_file_cookie_entry(cookie_file: str | None = None) -> AuthTokens | None:
+    """Read cookies from a file and save them.
 
-    This is a simpler alternative to the Chrome DevTools extraction
-    that doesn't require Chrome remote debugging.
+    This is the recommended way to authenticate - users save their cookies
+    to a text file to avoid terminal truncation issues.
 
     Args:
-        cookie_file: Optional path to file containing cookies (avoids terminal truncation)
+        cookie_file: Optional path to file. If not provided, shows instructions
+                     and prompts for the path.
     """
-    print("NotebookLM Consumer - Manual Cookie Entry")
+    print("NotebookLM Consumer - Cookie File Import")
     print("=" * 50)
     print()
 
-    # Read from file if provided
-    if cookie_file:
-        print(f"Reading cookies from file: {cookie_file}")
+    # If no file provided, show instructions and prompt for path
+    if not cookie_file:
+        print("Follow these steps to extract and save your cookies:")
         print()
-        try:
-            with open(cookie_file, "r") as f:
-                cookie_string = f.read().strip()
-        except FileNotFoundError:
-            print(f"ERROR: File not found: {cookie_file}")
-            return None
-        except Exception as e:
-            print(f"ERROR: Could not read file: {e}")
-            return None
-    else:
-        print("This tool will guide you through saving your NotebookLM cookies.")
+        print("  1. Open Chrome and go to: https://notebooklm.google.com")
+        print("  2. Make sure you're logged in")
+        print("  3. Press F12 (or Cmd+Option+I on Mac) to open DevTools")
+        print("  4. Click the 'Network' tab")
+        print("  5. In the filter box, type: batchexecute")
+        print("  6. Click on any notebook to trigger a request")
+        print("  7. Click on a 'batchexecute' request in the list")
+        print("  8. In the right panel, find 'Request Headers'")
+        print("  9. Find the line starting with 'cookie:'")
+        print(" 10. Right-click the cookie VALUE and select 'Copy value'")
+        print(" 11. Edit the 'cookies.txt' file in this repo (or create a new file)")
+        print(" 12. Paste the cookie string and save")
         print()
-        print("Step 1: Extract cookies from Chrome DevTools")
-        print("  1. Go to https://notebooklm.google.com and log in")
-        print("  2. Press F12 to open DevTools > Network tab")
-        print("  3. Type 'batchexecute' in the filter box")
-        print("  4. Click any notebook to trigger a request")
-        print("  5. Click on a 'batchexecute' request")
-        print("  6. In Headers tab, find 'cookie:' under Request Headers")
-        print("  7. Right-click the cookie VALUE and select 'Copy value'")
+        print("TIP: If running from the repo directory, just edit 'cookies.txt'")
+        print("     and enter: cookies.txt")
         print()
-        print("Step 2: Paste your cookies below")
         print("-" * 50)
         print()
-        print("TIP: If your terminal truncates long input, save cookies to a file")
-        print("     and use: notebooklm-consumer-auth --manual --file /path/to/cookies.txt")
-        print()
-        print("Paste your cookie string and press Enter:")
-        print("(It should look like: SID=xxx; HSID=xxx; SSID=xxx; ...)")
-        print()
 
-        # Read cookie string - input() doesn't truncate, but be explicit
         try:
-            cookie_string = input("> ").strip()
-        except EOFError:
-            print("\nNo input received.")
+            cookie_file = input("Enter the path to your cookie file: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nCancelled.")
             return None
 
+        if not cookie_file:
+            print("ERROR: No file path provided.")
+            return None
+
+        # Expand ~ to home directory
+        cookie_file = str(Path(cookie_file).expanduser())
+
+    print()
+    print(f"Reading cookies from: {cookie_file}")
+    print()
+
+    try:
+        with open(cookie_file, "r") as f:
+            cookie_string = f.read().strip()
+    except FileNotFoundError:
+        print(f"ERROR: File not found: {cookie_file}")
+        return None
+    except Exception as e:
+        print(f"ERROR: Could not read file: {e}")
+        return None
+
+    # Strip comment lines (lines starting with #)
+    lines = cookie_string.split("\n")
+    cookie_lines = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
+    cookie_string = " ".join(cookie_lines)
+
     if not cookie_string:
-        print("\nERROR: No cookie string provided.")
+        print("\nERROR: No cookie string found in file.")
+        print("Make sure you pasted your cookies and removed the instructions.")
         return None
 
     print()
@@ -523,15 +575,7 @@ def run_manual_cookie_entry(cookie_file: str | None = None) -> AuthTokens | None
         print(f"Required: {REQUIRED_COOKIES}")
         print(f"Found: {list(cookies.keys())}")
         print()
-
-        # Skip confirmation if reading from file (no stdin available)
-        if cookie_file:
-            print("Continuing anyway (file mode)...")
-        else:
-            response = input("Continue anyway? (y/N): ").strip().lower()
-            if response != "y":
-                print("Cancelled.")
-                return None
+        print("Continuing anyway...")
 
     # Create tokens object (CSRF and session ID will be auto-extracted later)
     tokens = AuthTokens(
@@ -575,34 +619,30 @@ This tool extracts authentication tokens from Chrome for use with the NotebookLM
 
 TWO MODES:
 
-1. MANUAL MODE (--manual): Simple cookie entry (recommended)
-   - Extract cookies from Chrome DevTools manually
-   - Paste when prompted, OR use --file to read from file
-   - Use --file if your terminal truncates long cookie strings
+1. FILE MODE (--file): Import cookies from a file (RECOMMENDED)
+   - Shows step-by-step instructions for extracting cookies
+   - Prompts you for the file path after you save the cookies
    - No Chrome remote debugging required
 
 2. AUTO MODE (default): Automatic extraction via Chrome DevTools
-   - Requires Chrome with remote debugging enabled
-   - Automatically extracts cookies from browser
-   - More complex but fully automated
+   - Requires closing Chrome first
+   - Launches Chrome and extracts cookies automatically
+   - May not work on all systems
 
 EXAMPLES:
-  notebooklm-consumer-auth --manual              # Paste cookies interactively
-  notebooklm-consumer-auth --file cookies.txt   # Read cookies from file
+  notebooklm-consumer-auth --file               # Guided file import (recommended)
+  notebooklm-consumer-auth --file ~/cookies.txt # Direct file import
+  notebooklm-consumer-auth                      # Auto mode (close Chrome first)
 
 After authentication, start the MCP server with: notebooklm-consumer-mcp
         """
     )
     parser.add_argument(
-        "--manual",
-        action="store_true",
-        help="Manual mode: prompt for cookie paste (simple, recommended)"
-    )
-    parser.add_argument(
         "--file",
-        type=str,
+        nargs="?",
+        const="",  # When --file is used without argument, set to empty string
         metavar="PATH",
-        help="Read cookies from file instead of stdin (use with --manual)"
+        help="Import cookies from file (recommended). Shows instructions if no path given."
     )
     parser.add_argument(
         "--port",
@@ -634,9 +674,9 @@ After authentication, start the MCP server with: notebooklm-consumer-mcp
         return 0
 
     try:
-        if args.manual or args.file:
-            # Simple manual cookie entry (from stdin or file)
-            tokens = run_manual_cookie_entry(cookie_file=args.file)
+        if args.file is not None:  # --file was used (with or without path)
+            # File-based cookie import
+            tokens = run_file_cookie_entry(cookie_file=args.file if args.file else None)
         else:
             # Automatic extraction via Chrome DevTools
             tokens = run_auth_flow(args.port, auto_launch=not args.no_auto_launch)
