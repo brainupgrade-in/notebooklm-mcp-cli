@@ -85,13 +85,15 @@ When API calls fail with auth errors, re-extract fresh cookies from Chrome DevTo
 ## Architecture
 
 ```
-src/notebooklm_mcp/
+src/notebooklm_tools/
 ├── __init__.py      # Package version
-├── server.py        # FastMCP server with tool definitions
-├── api_client.py    # Internal API client
-├── constants.py     # Code-name mappings (CodeMapper class)
-├── auth.py          # Token caching and validation
-└── auth_cli.py      # CLI for Chrome-based auth (notebooklm-mcp-auth)
+├── cli/             # CLI commands and formatting
+├── mcp/server.py    # FastMCP server with tool definitions
+├── core/client.py   # Internal API client
+├── core/constants.py # Code-name mappings (CodeMapper class)
+├── core/auth.py     # Token caching and validation
+├── core/auth_cli.py # CLI for Chrome-based auth (notebooklm-mcp-auth)
+└── utils/           # Configuration and browser utilities
 ```
 
 **Executables:**

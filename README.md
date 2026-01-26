@@ -59,17 +59,17 @@ Install from PyPI using your preferred Python package manager:
 
 ### Using uv (Recommended)
 ```bash
-uv tool install notebooklm-mcp-server
+uv tool install notebooklm-mcp-cli
 ```
 
 ### Using pip
 ```bash
-pip install notebooklm-mcp-server
+pip install notebooklm-mcp-cli
 ```
 
 ### Using pipx
 ```bash
-pipx install notebooklm-mcp-server
+pipx install notebooklm-mcp-cli
 ```
 
 <details>
@@ -89,13 +89,13 @@ uv tool install .
 
 ```bash
 # Using uv
-uv tool upgrade notebooklm-mcp-server
+uv tool upgrade notebooklm-mcp-cli
 
 # Using pip
-pip install --upgrade notebooklm-mcp-server
+pip install --upgrade notebooklm-mcp-cli
 
 # Using pipx
-pipx upgrade notebooklm-mcp-server
+pipx upgrade notebooklm-mcp-cli
 ```
 
 After upgrading, restart your AI tool to reconnect to the updated MCP server:
@@ -110,13 +110,13 @@ To completely remove the MCP:
 
 ```bash
 # Using uv
-uv tool uninstall notebooklm-mcp-server
+uv tool uninstall notebooklm-mcp-cli
 
 # Using pip
-pip uninstall notebooklm-mcp-server
+pip uninstall notebooklm-mcp-cli
 
 # Using pipx
-pipx uninstall notebooklm-mcp-server
+pipx uninstall notebooklm-mcp-cli
 
 # Remove cached auth tokens (optional)
 rm -rf ~/.notebooklm-mcp
@@ -384,14 +384,14 @@ If automatic refresh fails (Google login fully expired), run `notebooklm-mcp-aut
 ### `uv tool upgrade` Not Installing Latest Version
 
 **Symptoms:**
-- Running `uv tool upgrade notebooklm-mcp-server` installs an older version (e.g., 0.1.5 instead of 0.1.9)
+- Running `uv tool upgrade notebooklm-mcp-cli` installs an older version (e.g., 0.1.5 instead of 0.1.9)
 - `uv cache clean` doesn't fix the issue
 
 **Why this happens:** `uv tool upgrade` respects version constraints from your original installation. If you initially installed an older version or with a constraint, `upgrade` stays within those bounds by design.
 
 **Fix — Force reinstall:**
 ```bash
-uv tool install --force notebooklm-mcp-server
+uv tool install --force notebooklm-mcp-cli
 ```
 
 This bypasses any cached constraints and installs the absolute latest version from PyPI.
@@ -399,7 +399,7 @@ This bypasses any cached constraints and installs the absolute latest version fr
 **Verify:**
 ```bash
 uv tool list | grep notebooklm
-# Should show: notebooklm-mcp-server v0.1.9 (or latest)
+# Should show: notebooklm-mcp-cli v0.1.9 (or latest)
 ```
 
 ---

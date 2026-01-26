@@ -94,10 +94,10 @@ nlm source add <notebook-id> --file document.pdf --headless
 ### Authentication Flow
 
 1. **Login** (`nlm login` or `notebooklm-mcp-auth`):
-   - Launches Chrome with persistent profile: `~/.notebooklm-tools/chrome-profile`
+   - Launches Chrome with persistent profile: `~/.notebooklm-mcp-cli/chrome-profile`
    - User logs in to NotebookLM
    - Cookies are stored in Chrome's profile (automatic)
-   - Cookies are also extracted and saved to `~/.notebooklm-tools/profiles/default/cookies.json` (for API calls)
+   - Cookies are also extracted and saved to `~/.notebooklm-mcp-cli/profiles/default/cookies.json` (for API calls)
 
 2. **File Upload**:
    - Launches Chrome with the **same** persistent profile

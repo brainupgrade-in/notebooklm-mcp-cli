@@ -1,8 +1,9 @@
-"""Configuration management for NotebookLM Tools.
+"""Configuration management for NotebookLM MCP CLI.
 
-Uses ~/.notebooklm-tools/ for all data (config, profiles, Chrome profile).
+Uses ~/.notebooklm-mcp-cli/ for all data (config, profiles, Chrome profile).
 Supports migration from old locations:
-- ~/.notebooklm-mcp/ (old MCP location)  
+- ~/.notebooklm-mcp/ (old MCP location)
+- ~/.notebooklm-tools/ (previous unified location)  
 - ~/Library/Application Support/nlm/ (old CLI location on macOS)
 """
 
@@ -18,11 +19,12 @@ from pydantic import BaseModel, Field
 # Storage Location
 # =============================================================================
 
-STORAGE_DIR_NAME = ".notebooklm-tools"
+STORAGE_DIR_NAME = ".notebooklm-mcp-cli"
 
 # Old locations to check for migration
 OLD_LOCATIONS = [
     Path.home() / ".notebooklm-mcp",  # Old MCP location
+    Path.home() / ".notebooklm-tools",  # Previous unified location
 ]
 
 # Try to add old CLI location (platformdirs-based)
@@ -34,11 +36,11 @@ except ImportError:
 
 
 def get_storage_dir() -> Path:
-    """Get the main storage directory (~/.notebooklm-tools/).
+    """Get the main storage directory (~/.notebooklm-mcp-cli/).
     
     Returns the path, creating it if needed.
     """
-    if env_path := os.environ.get("NOTEBOOKLM_TOOLS_PATH"):
+    if env_path := os.environ.get("NOTEBOOKLM_MCP_CLI_PATH"):
         storage_dir = Path(env_path)
     else:
         storage_dir = Path.home() / STORAGE_DIR_NAME

@@ -21,8 +21,8 @@ The project uses `uv` for dependency management and tool installation.
 
 **From PyPI (Recommended):**
 ```bash
-uv tool install notebooklm-mcp-server
-# or: pip install notebooklm-mcp-server
+uv tool install notebooklm-mcp-cli
+# or: pip install notebooklm-mcp-cli
 ```
 
 **From Source (Development):**
@@ -103,12 +103,14 @@ uv run pytest tests/test_api_client.py
 
 ## Project Structure
 
-- `src/notebooklm_mcp/`
-    - `server.py`: Main entry point. Defines the MCP server and tools.
-    - `api_client.py`: The core logic. Contains the internal API calls.
-    - `constants.py`: Single source of truth for all API code-name mappings.
-    - `auth.py`: Handles token validation, storage, and loading.
-    - `auth_cli.py`: Implementation of the `notebooklm-mcp-auth` CLI.
+- `src/notebooklm_tools/`
+    - `cli/`: CLI commands and formatting
+    - `mcp/server.py`: MCP server with tool definitions
+    - `core/client.py`: The core logic. Contains the internal API calls.
+    - `core/constants.py`: Single source of truth for all API code-name mappings.
+    - `core/auth.py`: Handles token validation, storage, and loading.
+    - `core/auth_cli.py`: Implementation of the `notebooklm-mcp-auth` CLI.
+    - `utils/`: Configuration and browser utilities
 - `CLAUDE.md`: Contains detailed documentation on the internal RPC IDs and protocol specifics. **Refer to this file for API deep dives.**
 - `pyproject.toml`: Project configuration and dependencies.
 
