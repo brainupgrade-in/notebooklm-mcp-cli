@@ -418,6 +418,41 @@ class SourceMixin(BaseClient):
 
             return upload_url
 
+    def _upload_file_streaming(self, upload_url: str, file_path: Path) -> None:
+        """Stream upload file content to the resumable upload URL.
+
+        Step 3 of the resumable upload protocol. Uses streaming to
+        avoid loading the entire file into memory.
+
+        Args:
+            upload_url: The upload URL from step 2
+            file_path: Path to the file to upload
+
+        Raises:
+            FileUploadError: If the upload fails
+        """
+        cookies = self._get_httpx_cookies()
+
+        headers = {
+            "Accept": "*/*",
+            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+            "Origin": "https://notebooklm.google.com",
+            "Referer": "https://notebooklm.google.com/",
+            "x-goog-authuser": "0",
+            "x-goog-upload-command": "upload, finalize",
+            "x-goog-upload-offset": "0",
+        }
+
+        # Generator for streaming file content
+        def file_stream():
+            with open(file_path, "rb") as f:
+                while chunk := f.read(65536):  # 64KB chunks
+                    yield chunk
+
+        with httpx.Client(timeout=300.0, cookies=cookies) as client:
+            response = client.post(upload_url, headers=headers, content=file_stream())
+            response.raise_for_status()
+
     def upload_file(
         self,
         notebook_id: str,
