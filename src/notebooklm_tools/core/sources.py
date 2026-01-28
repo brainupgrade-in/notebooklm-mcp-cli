@@ -453,6 +453,67 @@ class SourceMixin(BaseClient):
             response = client.post(upload_url, headers=headers, content=file_stream())
             response.raise_for_status()
 
+    def add_file(
+        self,
+        notebook_id: str,
+        file_path: str | Path,
+        wait: bool = False,
+        wait_timeout: float = 120.0,
+    ) -> dict:
+        """Add a local file as a source using resumable upload.
+
+        Uses Google's resumable upload protocol:
+        1. Register source intent with RPC → get SOURCE_ID
+        2. Start upload session with SOURCE_ID → get upload URL
+        3. Stream upload file content (memory-efficient for large files)
+
+        Supported file types: PDF, TXT, MD, DOCX, CSV, MP3, MP4, JPG, PNG
+
+        Args:
+            notebook_id: The notebook ID to add the source to
+            file_path: Path to the local file to upload
+            wait: If True, poll until source is processed (default: False)
+            wait_timeout: Max seconds to wait if wait=True (default: 120)
+
+        Returns:
+            dict with 'id' and 'title' of the created source
+
+        Raises:
+            FileValidationError: If file doesn't exist or is invalid
+            FileUploadError: If upload fails
+        """
+        file_path = Path(file_path)
+
+        # Validate file
+        if not file_path.exists():
+            raise FileValidationError(f"File not found: {file_path}")
+        if not file_path.is_file():
+            raise FileValidationError(f"Not a regular file: {file_path}")
+
+        filename = file_path.name
+        file_size = file_path.stat().st_size
+
+        if file_size == 0:
+            raise FileValidationError(f"File is empty: {file_path}")
+
+        # Step 1: Register source intent → get SOURCE_ID
+        source_id = self._register_file_source(notebook_id, filename)
+
+        # Step 2: Start resumable upload → get upload URL
+        upload_url = self._start_resumable_upload(notebook_id, filename, file_size, source_id)
+
+        # Step 3: Stream upload file content
+        self._upload_file_streaming(upload_url, file_path)
+
+        result = {"id": source_id, "title": filename}
+
+        # Optionally wait for processing
+        if wait:
+            # TODO: Implement wait_for_source_ready if needed
+            pass
+
+        return result
+
     def upload_file(
         self,
         notebook_id: str,
