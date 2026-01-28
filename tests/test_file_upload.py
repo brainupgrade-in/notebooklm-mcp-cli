@@ -59,6 +59,27 @@ class TestFileValidation:
             with pytest.raises(FileValidationError, match="Not a regular file"):
                 client.add_file("test-notebook-id", tmpdir)
 
+    def test_unsupported_file_type_raises_error(self):
+        """Test that unsupported file types raise FileValidationError."""
+        from notebooklm_tools.core.sources import SourceMixin
+
+        client = SourceMixin.__new__(SourceMixin)
+        client.cookies = {}
+        client.csrf_token = "test"
+        client._session_id = "test"
+        client._client = None
+
+        # Create a JSON file (unsupported type)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"test": "data"}')
+            temp_path = f.name
+
+        try:
+            with pytest.raises(FileValidationError, match="Unsupported file type: .json"):
+                client.add_file("test-notebook-id", temp_path)
+        finally:
+            Path(temp_path).unlink()
+
 
 class TestFileUploadProtocol:
     """Test the 3-step upload protocol."""

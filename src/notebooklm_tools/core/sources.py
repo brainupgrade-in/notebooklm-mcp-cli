@@ -496,6 +496,15 @@ class SourceMixin(BaseClient):
         if file_size == 0:
             raise FileValidationError(f"File is empty: {file_path}")
 
+        # Validate file type
+        supported_extensions = {'.pdf', '.txt', '.md', '.docx', '.csv', '.mp3', '.mp4', '.jpg', '.jpeg', '.png'}
+        file_extension = file_path.suffix.lower()
+        if file_extension not in supported_extensions:
+            raise FileValidationError(
+                f"Unsupported file type: {file_extension}\n"
+                f"Supported types: {', '.join(sorted(supported_extensions))}"
+            )
+
         # Step 1: Register source intent → get SOURCE_ID
         source_id = self._register_file_source(notebook_id, filename)
 
@@ -525,6 +534,8 @@ class SourceMixin(BaseClient):
         This is a fallback for cases where HTTP upload fails. Requires Chrome.
         Primary method is add_file() which uses HTTP resumable upload.
 
+        Supported file types: PDF, TXT, MD, DOCX, CSV, MP3, MP4, JPG, PNG
+
         This method uses the same Chrome profile that was used during login,
         which already contains authentication cookies. Chrome is launched
         visibly to perform the upload via browser automation.
@@ -540,7 +551,18 @@ class SourceMixin(BaseClient):
         Raises:
             RuntimeError: If BrowserUploader dependencies are missing
             NLMError: If upload fails or authentication is required
+            FileValidationError: If file type is not supported
         """
+        # Validate file type
+        file_path_obj = Path(file_path)
+        supported_extensions = {'.pdf', '.txt', '.md', '.docx', '.csv', '.mp3', '.mp4', '.jpg', '.jpeg', '.png'}
+        file_extension = file_path_obj.suffix.lower()
+        if file_extension not in supported_extensions:
+            raise FileValidationError(
+                f"Unsupported file type: {file_extension}\n"
+                f"Supported types: {', '.join(sorted(supported_extensions))}"
+            )
+
         try:
             from notebooklm_tools.core.uploader import BrowserUploader
             uploader = BrowserUploader(profile_name=profile_name, headless=False)
