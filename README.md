@@ -1,6 +1,6 @@
 # NotebookLM CLI & MCP Server
 
-![NotebookLM MCP Header](docs/media/header.jpeg)
+![NotebookLM MCP Header](docs/media/header.jpg)
 
 **Programmatic access to Google NotebookLM** — via command-line interface (CLI) or Model Context Protocol (MCP) server.
 
