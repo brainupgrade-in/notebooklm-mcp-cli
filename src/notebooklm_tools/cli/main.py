@@ -199,11 +199,15 @@ def login(
     
     try:
         from notebooklm_tools.utils.cdp import extract_cookies_via_cdp, terminate_chrome
-        from notebooklm_tools.utils.config import check_migration_sources, run_migration, get_chrome_profile_dir
+        from notebooklm_tools.utils.config import check_migration_sources, run_migration, get_storage_dir
         
         # Check if we need to migrate from legacy packages
-        chrome_profile = get_chrome_profile_dir()
-        profile_exists = (chrome_profile / "Default").exists() or (chrome_profile / "Local State").exists()
+        # IMPORTANT: Don't use get_chrome_profile_dir() here as it creates the directory,
+        # which would prevent migration from running
+        chrome_profile = get_storage_dir() / "chrome-profile"
+        profile_exists = chrome_profile.exists() and (
+            (chrome_profile / "Default").exists() or (chrome_profile / "Local State").exists()
+        )
         
         if not profile_exists:
             sources = check_migration_sources()
