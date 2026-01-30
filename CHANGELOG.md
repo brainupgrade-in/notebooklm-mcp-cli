@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.4] - 2026-01-29
 
 ### Added
 - **Skill Installer for AI Coding Assistants** (`nlm skill` commands)
-  - Install NotebookLM skills for Claude Code, OpenCode, Gemini CLI, Antigravity, and Codex
+  - Install NotebookLM skills for Claude Code, OpenCode, Gemini CLI, Antigravity, Cursor, and Codex
   - Support for user-level (`~/.config`) and project-level installation
   - Parent directory validation with smart prompts (create/switch/cancel)
   - Installation status tracking with `nlm skill list`
@@ -17,8 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unified CLI/MCP skill with intelligent tool detection logic
   - Consistent `nlm-skill` folder naming across all installations
   - Complete documentation in AI docs (`nlm --ai`)
-
-## [0.2.4] - 2026-01-29
+- Integration tests for all CLI bug fixes (9 tests covering error handling, parameter passing, alias resolution)
+- `nlm login profile rename` command for renaming authentication profiles
+- **Multi-profile Chrome isolation** - each authentication profile now uses a separate Chrome session, allowing simultaneous logins to multiple Google accounts
+- **Email capture during login** - profiles now display associated Google account email in `nlm login profile list`
+- **Default profile configuration** - `nlm config set auth.default_profile <name>` to avoid typing `--profile` for every command
+- **Auto-cleanup Chrome profile cache** after authentication to save disk space
 
 ### Fixed
 - Fixed `console.print` using invalid `err=True` parameter (now uses `err_console = Console(stderr=True)`)
@@ -32,13 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Download commands now support notebook aliases (auto-resolved via `get_alias_manager().resolve()`)
 - Added `--confirm` flag to `nlm alias delete` command
 - Updated all documentation to reflect login command structure
-
-### Added
-- Integration tests for all CLI bug fixes (9 tests covering error handling, parameter passing, alias resolution)
-- `nlm login profile rename` command for renaming authentication profiles
-- **Multi-profile Chrome isolation** - each authentication profile now uses a separate Chrome session, allowing simultaneous logins to multiple Google accounts
-- **Email capture during login** - profiles now display associated Google account email in `nlm login profile list`
-- **Default profile configuration** - `nlm config set auth.default_profile <name>` to avoid typing `--profile` for every command
 
 ## [0.2.0] - 2026-01-25
 
