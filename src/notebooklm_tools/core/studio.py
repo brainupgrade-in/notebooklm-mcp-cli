@@ -133,8 +133,20 @@ class StudioMixin(BaseClient):
         visual_style_code: int = 1,  # VIDEO_STYLE_AUTO_SELECT
         language: str = "en",
         focus_prompt: str = "",
+        custom_style_description: str = "",
     ) -> dict | None:
-        """Create a Video Overview for a notebook."""
+        """Create a Video Overview for a notebook.
+
+        Args:
+            notebook_id: The notebook UUID
+            source_ids: List of source IDs to include (defaults to all sources)
+            format_code: 1=Explainer, 2=Brief
+            visual_style_code: 1=Auto, 2=Custom, 3=Classic, etc.
+            language: BCP-47 language code
+            focus_prompt: What the AI hosts should focus on (content guidance)
+            custom_style_description: Custom visual style description (only used when visual_style_code=2).
+                Describe the aesthetic, art style, color palette, and visual elements you want.
+        """
         client = self._get_client()
 
         # Default to all sources if not specified
@@ -150,17 +162,34 @@ class StudioMixin(BaseClient):
         # Build source IDs in the simpler format: [[id1], [id2], ...]
         sources_simple = [[sid] for sid in source_ids]
 
-        video_options = [
-            None, None,
-            [
-                sources_simple,
-                language,
-                focus_prompt,
-                None,
-                format_code,
-                visual_style_code
+        # When visual_style_code is 2 (custom), include the custom style description
+        # Based on NotebookLM web UI analysis, custom style description goes at position 6
+        # in the inner video options array, after visual_style_code
+        if visual_style_code == constants.VIDEO_STYLE_CUSTOM and custom_style_description:
+            video_options = [
+                None, None,
+                [
+                    sources_simple,
+                    language,
+                    focus_prompt,
+                    None,
+                    format_code,
+                    visual_style_code,
+                    custom_style_description  # Custom style description at position 6
+                ]
             ]
-        ]
+        else:
+            video_options = [
+                None, None,
+                [
+                    sources_simple,
+                    language,
+                    focus_prompt,
+                    None,
+                    format_code,
+                    visual_style_code
+                ]
+            ]
 
         params = [
             [2],
@@ -195,6 +224,7 @@ class StudioMixin(BaseClient):
                 "status": "in_progress" if status_code == 1 else "completed" if status_code == 3 else "unknown",
                 "format": constants.VIDEO_FORMATS.get_name(format_code),
                 "visual_style": constants.VIDEO_STYLES.get_name(visual_style_code),
+                "custom_style_description": custom_style_description if visual_style_code == constants.VIDEO_STYLE_CUSTOM else None,
                 "language": language,
             }
 

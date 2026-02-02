@@ -18,6 +18,7 @@ def studio_create(
     audio_length: str = "default",
     video_format: str = "explainer",
     visual_style: str = "auto_select",
+    custom_style_description: str = "",
     # Infographic options
     orientation: str = "landscape",
     detail_level: str = "standard",
@@ -59,7 +60,7 @@ def studio_create(
 
         Type-specific options:
         - audio: audio_format (deep_dive|brief|critique|debate), audio_length (short|default|long)
-        - video: video_format (explainer|brief), visual_style (auto_select|classic|whiteboard|kawaii|anime|watercolor|retro_print|heritage|paper_craft)
+        - video: video_format (explainer|brief), visual_style (auto_select|custom|classic|whiteboard|kawaii|anime|watercolor|retro_print|heritage|paper_craft), custom_style_description (for visual_style=custom)
         - infographic: orientation (landscape|portrait|square), detail_level (concise|standard|detailed)
         - slide_deck: slide_format (detailed_deck|presenter_slides), slide_length (short|default)
         - report: report_format (Briefing Doc|Study Guide|Blog Post|Create Your Own), custom_prompt
@@ -99,6 +100,8 @@ def studio_create(
             settings.update({"format": audio_format, "length": audio_length, "language": language})
         elif artifact_type == "video":
             settings.update({"format": video_format, "visual_style": visual_style, "language": language})
+            if visual_style.lower() == "custom":
+                settings["custom_style_description"] = custom_style_description or "(none - will use default custom style)"
         elif artifact_type == "infographic":
             settings.update({"orientation": orientation, "detail_level": detail_level, "language": language})
         elif artifact_type == "slide_deck":
@@ -186,6 +189,7 @@ def studio_create(
                 visual_style_code=style_code,
                 language=language,
                 focus_prompt=focus_prompt,
+                custom_style_description=custom_style_description,
             )
 
         elif artifact_type == "infographic":

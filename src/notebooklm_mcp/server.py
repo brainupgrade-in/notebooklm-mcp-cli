@@ -1126,6 +1126,7 @@ def video_overview_create(
     visual_style: str = "auto_select",
     language: str = "en",
     focus_prompt: str = "",
+    custom_style_description: str = "",
     confirm: bool = False,
 ) -> dict[str, Any]:
     """Generate video overview. Requires confirm=True after user approval.
@@ -1134,23 +1135,32 @@ def video_overview_create(
         notebook_id: Notebook UUID
         source_ids: Source IDs (default: all)
         format: explainer|brief
-        visual_style: auto_select|classic|whiteboard|kawaii|anime|watercolor|retro_print|heritage|paper_craft
+        visual_style: auto_select|custom|classic|whiteboard|kawaii|anime|watercolor|retro_print|heritage|paper_craft
         language: BCP-47 code (en, es, fr, de, ja)
-        focus_prompt: Optional focus text
+        focus_prompt: What the AI hosts should focus on (content guidance)
+        custom_style_description: Custom visual style description (only used when visual_style="custom").
+            Describe the aesthetic, art style, color palette, and visual elements you want.
+            Example: "Minimalist tech aesthetic with dark backgrounds, neon blue accents, 
+            clean geometric shapes, and futuristic sans-serif typography"
         confirm: Must be True after user approval
     """
     if not confirm:
+        settings = {
+            "notebook_id": notebook_id,
+            "format": format,
+            "visual_style": visual_style,
+            "language": language,
+            "focus_prompt": focus_prompt or "(none)",
+            "source_ids": source_ids or "all sources",
+        }
+        # Include custom_style_description in settings only when relevant
+        if visual_style.lower() == "custom":
+            settings["custom_style_description"] = custom_style_description or "(none - will use default custom style)"
+        
         return {
             "status": "pending_confirmation",
             "message": "Please confirm these settings before creating the video overview:",
-            "settings": {
-                "notebook_id": notebook_id,
-                "format": format,
-                "visual_style": visual_style,
-                "language": language,
-                "focus_prompt": focus_prompt or "(none)",
-                "source_ids": source_ids or "all sources",
-            },
+            "settings": settings,
             "note": "Set confirm=True after user approves these settings.",
         }
 
@@ -1193,10 +1203,11 @@ def video_overview_create(
             visual_style_code=style_code,
             language=language,
             focus_prompt=focus_prompt,
+            custom_style_description=custom_style_description,
         )
 
         if result:
-            return {
+            response = {
                 "status": "success",
                 "artifact_id": result["artifact_id"],
                 "type": "video",
@@ -1207,6 +1218,10 @@ def video_overview_create(
                 "message": "Video generation started. Use studio_status to check progress.",
                 "notebook_url": f"https://notebooklm.google.com/notebook/{notebook_id}",
             }
+            # Include custom_style_description in response if used
+            if result.get("custom_style_description"):
+                response["custom_style_description"] = result["custom_style_description"]
+            return response
         return {"status": "error", "error": "Failed to create video overview"}
     except Exception as e:
         return {"status": "error", "error": str(e)}
